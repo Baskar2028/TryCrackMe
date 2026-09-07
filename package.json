@@ -1,0 +1,1 @@
+{"name":"try-crack-me","private":true,"workspaces":["client","server"],"scripts":{"dev":"bash ./start.sh","setup":"bash ./setup.sh"},"devDependencies":{}}
