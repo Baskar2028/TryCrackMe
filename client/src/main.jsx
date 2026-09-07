@@ -21,7 +21,11 @@ import {
   ChevronRight,
   TerminalSquare,
   RefreshCw,
-  EyeOff,
+  Copy,
+  Check,
+  Trash2,
+  XCircle,
+  HelpCircle,
 } from "lucide-react";
 import "./styles.css";
 const api = async (path, opts = {}) => {
@@ -150,7 +154,7 @@ function Login({ onLogin }) {
           )}
         </form>
         <div className="login-note">
-          Server-authoritative timer • 25 challenges • 10-warning limit
+          Server-authoritative timer • 13 challenges • 10-warning limit
         </div>
       </div>
     </div>
@@ -218,15 +222,40 @@ function Participant({ me }) {
     [code, setCode] = useState(""),
     [term, setTerm] = useState(null),
     [message, setMessage] = useState("");
-  useEventSocket(setEvent);
   useEffect(() => {
-    api("/questions").then((d) => setQuestions(d.questions));
-    api("/participant/session").then((d) => {
-      setEvent(d.event);
-      setSession(d.session);
-      setProgress(d.progress || []);
-      if (d.session?.current_question) setSelected(d.session.current_question);
-    });
+    let mounted = true;
+    const syncSession = async () => {
+      try {
+        const d = await api("/participant/session");
+        if (!mounted) return;
+        setEvent(d.event);
+        setSession(d.session);
+        setProgress(d.progress || []);
+        if (d.session?.current_question) setSelected(d.session.current_question);
+      } catch (e) {
+        if (mounted) setMessage(e.message);
+      }
+    };
+    api("/questions")
+      .then((d) => mounted && setQuestions(d.questions))
+      .catch((e) => mounted && setMessage(e.message));
+    syncSession();
+    const s = io({ withCredentials: true });
+    const onEvent = (nextEvent) => {
+      setEvent(nextEvent);
+      syncSession();
+    };
+    const onTerminated = () => {
+      setSession((current) =>
+        current ? { ...current, status: "TERMINATED" } : current,
+      );
+    };
+    s.on("event:update", onEvent);
+    s.on("session:terminated", onTerminated);
+    return () => {
+      mounted = false;
+      s.disconnect();
+    };
   }, []);
   useEffect(() => {
     const p = progress.find((x) => x.question_id === selected);
@@ -257,6 +286,7 @@ function Participant({ me }) {
     return <Result event={event} session={session} terminated />;
   if (event.status === "ENDED" || session.status === "COMPLETED")
     return <Result event={event} session={session} />;
+  if (!q) return <div className="center"><Spinner /></div>;
   return (
     <Competition
       event={event}
@@ -502,13 +532,13 @@ function Competition({
   };
   const next = () => {
     if (idx < questions.length - 1) {
-      save();
+      save(code);
       setSelected(questions[idx + 1].id);
     }
   };
   const prev = () => {
     if (idx > 0) {
-      save();
+      save(code);
       setSelected(questions[idx - 1].id);
     }
   };
@@ -613,12 +643,12 @@ function Competition({
               {message}
             </div>
           )}
-          <Terminal result={term} />
+          <Terminal result={term} onClear={() => setTerm(null)} q={q} />
         </main>
         <aside className="question-panel">
           <div className="panel-title">
             <span>CHALLENGES</span>
-            <span>{progress.filter((p) => p.solved).length}/25 solved</span>
+            <span>{progress.filter((p) => p.solved).length}/{questions.length} solved</span>
           </div>
           {groups.map((g) => (
             <div key={g.lang} className="qgroup">
@@ -634,7 +664,7 @@ function Competition({
                       key={x.id}
                       className={`${x.id === selected ? "current " : ""}${p?.solved ? "solved " : p?.code && p.code !== x.starterCode ? "attempted " : ""}`}
                       onClick={() => {
-                        save();
+                        save(code);
                         setSelected(x.id);
                       }}
                     >
@@ -650,13 +680,6 @@ function Competition({
               </div>
             </div>
           ))}
-          <div className="rule-card">
-            <EyeOff size={15} />
-            <span>
-              Hidden tests are never shown. Full marks require official
-              behavior.
-            </span>
-          </div>
         </aside>
       </div>
       {confirm && (
@@ -676,6 +699,7 @@ function Competition({
                   confirm === "submit"
                     ? submit
                     : () => {
+                        save(q.starterCode);
                         setCode(q.starterCode);
                         setConfirm(null);
                       }
@@ -690,37 +714,196 @@ function Competition({
     </div>
   );
 }
-function Terminal({ result }) {
-  if (!result)
-    return (
-      <div className="terminal">
-        <div className="terminal-head">
-          <TerminalSquare size={15} /> TERMINAL
-        </div>
-        <div className="terminal-empty">
-          Run the program to inspect compile/runtime output and public test
-          results.
-        </div>
-      </div>
-    );
+function Terminal({ result, onClear, q }) {
+  const [activeTab, setActiveTab] = useState("console");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (result) {
+      if (!result.compile?.ok || (result.compile?.stderr && !result.tests?.length)) {
+        setActiveTab("console");
+      } else if (result.tests?.length) {
+        setActiveTab("tests");
+      }
+    }
+  }, [result]);
+
+  const copyOutput = () => {
+    if (!result) return;
+    const text = [
+      result.compile?.stdout ? `--- STDOUT ---\n${result.compile.stdout}` : "",
+      result.compile?.stderr ? `--- STDERR ---\n${result.compile.stderr}` : "",
+      ...(result.tests || []).map(
+        (t, i) =>
+          `--- TEST ${i + 1} (${t.passed ? "PASS" : "FAIL"}) ---\nExpected: ${t.expected}\nActual: ${t.stdout || "(no output)"}${t.stderr ? `\nError: ${t.stderr}` : ""}`
+      ),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const passCount = result?.tests?.filter((t) => t.passed).length || 0;
+  const totalTests = result?.tests?.length || 0;
+
   return (
-    <div className="terminal">
-      <div className="terminal-head">
-        <TerminalSquare size={15} /> TERMINAL
-      </div>
-      <pre>{result.compile?.stderr || result.compile?.stdout || ""}</pre>
-      {result.tests?.map((t, i) => (
-        <div key={i} className={"test " + (t.passed ? "pass" : "fail")}>
-          <span>
-            {t.passed ? "PASS" : "FAIL"} · Public Test {i + 1}
-          </span>
-          <small>
-            {t.timeout
-              ? "TIMEOUT"
-              : `Expected: ${t.expected} | Got: ${t.stdout?.trim()}`}
-          </small>
+    <div className="terminal-container">
+      <div className="terminal-header">
+        <div className="terminal-tabs">
+          <button
+            className={`term-tab ${activeTab === "console" ? "active" : ""}`}
+            onClick={() => setActiveTab("console")}
+          >
+            <TerminalSquare size={14} /> Console Output
+            {result?.compile?.stderr && <span className="tab-indicator err" />}
+          </button>
+          <button
+            className={`term-tab ${activeTab === "tests" ? "active" : ""}`}
+            onClick={() => setActiveTab("tests")}
+          >
+            <Activity size={14} /> Test Results
+            {totalTests > 0 && (
+              <span className={`tab-badge ${passCount === totalTests ? "pass" : "fail"}`}>
+                {passCount}/{totalTests}
+              </span>
+            )}
+          </button>
+          <button
+            className={`term-tab ${activeTab === "guidance" ? "active" : ""}`}
+            onClick={() => setActiveTab("guidance")}
+          >
+            <HelpCircle size={14} /> Guide & Rules
+          </button>
         </div>
-      ))}
+
+        <div className="terminal-actions">
+          {result && (
+            <>
+              <button className="term-icon-btn" onClick={copyOutput} title="Copy output to clipboard">
+                {copied ? <Check size={13} className="text-green" /> : <Copy size={13} />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+              {onClear && (
+                <button className="term-icon-btn" onClick={onClear} title="Clear terminal output">
+                  <Trash2 size={13} />
+                  <span>Clear</span>
+                </button>
+              )}
+            </>
+          )}
+          {result ? (
+            <div className={`status-tag ${result.compile?.ok ? (passCount === totalTests && totalTests > 0 ? "pass" : "warn") : "fail"}`}>
+              {result.compile?.ok ? (totalTests > 0 && passCount === totalTests ? "ALL PASSED" : "EXECUTION DONE") : "COMPILE ERROR"}
+            </div>
+          ) : (
+            <div className="status-tag idle">CONSOLE READY</div>
+          )}
+        </div>
+      </div>
+
+      <div className="terminal-body">
+        {activeTab === "console" && (
+          <div className="tab-content console-view">
+            {!result ? (
+              <div className="terminal-empty-state">
+                <TerminalSquare size={32} />
+                <p>Run your code to inspect compiler diagnostics, standard output, and execution logs.</p>
+              </div>
+            ) : (
+              <div className="console-grid">
+                <OutputBlock
+                  label="STDOUT (STANDARD OUTPUT)"
+                  value={result.compile?.stdout}
+                  placeholder="Program completed without stdout."
+                />
+                <OutputBlock
+                  label="STDERR (DIAGNOSTICS & ERRORS)"
+                  value={result.compile?.stderr}
+                  error={Boolean(result.compile?.stderr)}
+                  placeholder="Clean build — no errors or warnings reported."
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "tests" && (
+          <div className="tab-content tests-view">
+            {!result || !result.tests?.length ? (
+              <div className="terminal-empty-state">
+                <Activity size={32} />
+                <p>Click <b>Run Code</b> or <b>Submit</b> to execute public test cases.</p>
+              </div>
+            ) : (
+              <div className="tests-wrapper">
+                <div className="test-suite-header">
+                  <span>PUBLIC TEST SUITE</span>
+                  <span className={passCount === totalTests ? "test-summary-pass" : "test-summary-fail"}>
+                    {passCount} of {totalTests} test cases passed
+                  </span>
+                </div>
+                <div className="test-cards">
+                  {result.tests.map((t, idx) => (
+                    <div key={idx} className={`test-card ${t.passed ? "passed" : "failed"}`}>
+                      <div className="test-card-head">
+                        <div className="test-card-title">
+                          {t.passed ? <CheckCircle2 size={16} className="pass-icon" /> : <XCircle size={16} className="fail-icon" />}
+                          <b>Test #{idx + 1}</b>
+                        </div>
+                        <div className="test-card-status">
+                          {t.timeout ? <span className="badge-timeout">TIMEOUT</span> : t.passed ? <span className="badge-pass">PASSED</span> : <span className="badge-fail">FAILED</span>}
+                        </div>
+                      </div>
+
+                      <div className="test-card-body">
+                        <div className="test-field">
+                          <label>Expected Output</label>
+                          <pre>{t.expected}</pre>
+                        </div>
+                        <div className="test-field">
+                          <label>Your Program Output</label>
+                          <pre className={t.passed ? "match" : "mismatch"}>{t.stdout || "(no output)"}</pre>
+                        </div>
+                        {t.stderr && (
+                          <div className="test-field full-width error">
+                            <label>Runtime Error</label>
+                            <pre>{t.stderr}</pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "guidance" && (
+          <div className="tab-content guidance-view">
+            <div className="guidance-card">
+              <h4><Shield size={16} /> Debugging & Competition Rules</h4>
+              <ul>
+                <li><b>Input format:</b> Read inputs using standard library methods (`scanf` in C, `input()` in Python, `Scanner` in Java).</li>
+                <li><b>Output format:</b> Print exact matching outputs without extra prompt phrases unless required.</li>
+                <li><b>Anti-Cheat Policy:</b> Tab switching, focus loss, screenshot attempts, or clipboard shortcuts increment your warning counter. Reaching 10 warnings terminates your session.</li>
+                <li><b>Submission Scoring:</b> You can submit multiple times. Score updates when public tests pass.</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function OutputBlock({ label, value, error = false, placeholder = "No output" }) {
+  return (
+    <div className={`output-block ${error ? "error-output" : ""}`}>
+      <div className="output-block-label">{label}</div>
+      <pre className="output-content">{value || placeholder}</pre>
     </div>
   );
 }
@@ -743,7 +926,7 @@ function Result({ event, session, terminated }) {
         {data && (
           <div className="score-big">
             {data.totals.total}
-            <small>/560</small>
+            <small>/295</small>
           </div>
         )}
         <div className="result-grid">
@@ -773,24 +956,28 @@ function Admin({ me }) {
     [selected, setSelected] = useState(null),
     [detail, setDetail] = useState(null),
     [tab, setTab] = useState("leaderboard"),
-    [msg, setMsg] = useState("");
+    [msg, setMsg] = useState(""),
+    [remaining, setRemaining] = useState(me.event.remainingSeconds);
+  const load = async () => {
+    try {
+      const [b, p] = await Promise.all([
+        api("/admin/leaderboard"),
+        api("/admin/participants"),
+      ]);
+      setEvent(b.event);
+      setBoard(b.leaderboard);
+      setPeople(p.participants);
+    } catch (e) {
+      setMsg(e.message);
+    }
+  };
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [b, p] = await Promise.all([
-          api("/admin/leaderboard"),
-          api("/admin/participants"),
-        ]);
-        setEvent(b.event);
-        setBoard(b.leaderboard);
-        setPeople(p.participants);
-      } catch (e) {
-        setMsg(e.message);
-      }
-    };
     load();
     const s = io({ withCredentials: true });
-    s.on("leaderboard:update", setBoard);
+    s.on("leaderboard:update", (nextBoard) => {
+      setBoard(nextBoard);
+      load();
+    });
     s.on("event:update", setEvent);
     const i = setInterval(load, 4000);
     return () => {
@@ -798,6 +985,15 @@ function Admin({ me }) {
       s.disconnect();
     };
   }, []);
+  useEffect(() => {
+    const i = setInterval(() => {
+      setRemaining(
+        event.remainingSeconds -
+          Math.floor((Date.now() - event.serverNow) / 1000),
+      );
+    }, 500);
+    return () => clearInterval(i);
+  }, [event]);
   const action = async (a) => {
     if (
       a === "reset" &&
@@ -807,6 +1003,8 @@ function Admin({ me }) {
     try {
       const d = await api("/admin/event/" + a, { method: "POST" });
       setEvent(d);
+      setRemaining(d.remainingSeconds);
+      await load();
     } catch (e) {
       setMsg(e.message);
     }
@@ -827,7 +1025,7 @@ function Admin({ me }) {
         <div className="topstats">
           <div>
             <Timer size={16} />
-            <b>{fmt(event.remainingSeconds)}</b>
+            <b>{fmt(remaining)}</b>
           </div>
           <button
             onClick={async () => {
@@ -905,7 +1103,7 @@ function Admin({ me }) {
                     <td>
                       <b>{r.total_score}</b>
                     </td>
-                    <td>{r.solved}/25</td>
+                    <td>{r.solved}/13</td>
                     <td>{r.warnings_count || 0}/10</td>
                     <td>
                       <span className="status-pill">
@@ -939,7 +1137,7 @@ function Admin({ me }) {
                     <td>{p.participant_id}</td>
                     <td>{p.status || "NOT ENTERED"}</td>
                     <td>{p.current_question || "—"}</td>
-                    <td>{p.solved}/25</td>
+                    <td>{p.solved}/13</td>
                     <td>{p.score}</td>
                     <td>{p.warnings_count || 0}/10</td>
                     <td>

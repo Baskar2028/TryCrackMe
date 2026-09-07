@@ -1,13 +1,13 @@
 import { QUESTIONS } from "../server/src/questions.js";
 const counts = Object.groupBy(QUESTIONS, (q) => q.language);
-if (QUESTIONS.length !== 25)
-  throw new Error(`Expected 25 questions, got ${QUESTIONS.length}`);
+if (QUESTIONS.length !== 13)
+  throw new Error(`Expected 13 questions, got ${QUESTIONS.length}`);
 if (
-  (counts.C || []).length !== 10 ||
-  (counts.Python || []).length !== 10 ||
-  (counts.Java || []).length !== 5
+  (counts.C || []).length !== 5 ||
+  (counts.Python || []).length !== 5 ||
+  (counts.Java || []).length !== 3
 )
-  throw new Error("Language distribution must be C10/Python10/Java5");
+  throw new Error("Language distribution must be C5/Python5/Java3");
 for (const q of QUESTIONS) {
   if (
     !q.id ||
@@ -20,8 +20,8 @@ for (const q of QUESTIONS) {
   if (q.language === "C" && q.bugs.length !== 6)
     throw new Error(`C question ${q.id} must have exactly 6 bug records`);
 }
-const max = QUESTIONS.reduce((s, q) => s + q.maxMarks, 0) + 10;
-if (max !== 560) throw new Error(`Max score should be 560, got ${max}`);
+const max = QUESTIONS.reduce((s, q) => s + q.maxMarks, 0) + (counts.Python || []).length;
+if (max !== 295) throw new Error(`Max score should be 295, got ${max}`);
 console.log("DATA VALIDATION PASS");
 console.log({
   questions: QUESTIONS.length,

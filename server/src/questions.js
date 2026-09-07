@@ -20,19 +20,21 @@ const q = (
   bugs,
   maxMarks: lang === "Java" ? 30 : 20,
 });
+
 const C = (id, title, desc, input, code, tests, hidden, bugs) =>
   q(id, "C", title, desc, input, code, tests, hidden, bugs);
 const P = (id, title, desc, input, code, tests, hidden) =>
   q(id, "Python", title, desc, input, code, tests, hidden);
 const J = (id, title, desc, input, code, tests, hidden) =>
   q(id, "Java", title, desc, input, code, tests, hidden);
+
 export const QUESTIONS = [
   C(
     "C1",
     "Odd or Even Logic",
     "Read an integer and print Odd or Even.",
     "One integer",
-    `#include <stdio.h>\nint main(){\n int n;\n printf("Enter number: ");\n scanf("%d", n)\n if(n % 2 = 0) printf("Even\\n");\n else printf("Odd\\n");\n return 0\n}`,
+    `#include <stdio.h>\nint main(){\n int n;\n printf("Enter number: ");\n scanf("%d", n);\n if(n % 2 = 0) printf("Even\\n");\n else printf("Odd\\n");\n return 0;\n}`,
     [
       ["8", "Even"],
       ["7", "Odd"],
@@ -42,20 +44,20 @@ export const QUESTIONS = [
       ["-5", "Odd"],
     ],
     [
-      "Missing ; after scanf",
-      "Missing ; after return",
-      "scanf needs &n",
-      "Uses assignment instead of comparison",
-      "Wrong printf newline handling",
-      "Missing semicolon/flow issue",
+      "scanf requires & operator for integer address",
+      "Assignment operator '=' used inside if condition instead of '=='",
+      "Print formatting issue with interactive prompts",
+      "Return status code check",
+      "Syntax issue in conditional expression",
+      "Variable initialization issue",
     ],
   ),
   C(
     "C2",
-    "Logical and Conditional Operators",
-    "A voter is eligible only when age is at least 18 AND citizen flag is 1.",
+    "Voter Eligibility",
+    "A voter is eligible only when age is at least 18 AND citizen flag is 1. Print Eligible or Not Eligible.",
     "age citizenFlag",
-    `#include <stdio.h>\nint main(){\n int age,citizen; scanf("%d %d", &age, &citizen);\n if(age > 18 || citizen = 1) printf("Eligible\\n");\n else printf("Not Eligible\\n")\n return 0;\n}`,
+    `#include <stdio.h>\nint main(){\n int age, citizen;\n scanf("%d %d", &age, &citizen);\n if(age > 18 || citizen = 1) printf("Eligible\\n");\n else printf("Not Eligible\\n");\n return 0;\n}`,
     [
       ["18 1", "Eligible"],
       ["20 0", "Not Eligible"],
@@ -65,60 +67,60 @@ export const QUESTIONS = [
       ["30 1", "Eligible"],
     ],
     [
-      "Uses > instead of >=",
-      "Uses OR instead of AND",
-      "Assignment in condition",
-      "Missing semicolon",
-      "Boundary condition wrong",
-      "Incorrect condition precedence",
+      "Uses > instead of >= for age boundary",
+      "Uses OR (||) instead of AND (&&)",
+      "Assignment in condition (citizen = 1)",
+      "Boundary condition handling for age 18",
+      "Logical operator precedence defect",
+      "Incorrect boolean condition structure",
     ],
   ),
   C(
     "C3",
     "Array – Find Maximum",
-    "Read n integers and print the maximum.",
+    "Read n followed by n integers, and print the maximum value in the array.",
     "n followed by n integers",
-    `#include <stdio.h>\nint main(){\n int n,a[100],i,max; scanf("%d", &n);\n for(i=0;i<=n;i++) scanf("%d", &a[i]);\n max=0;\n for(i=1;i<n;i++) if(a[i] < max) max=a[i];\n printf("%d\\n", max)\n return 0;\n}`,
+    `#include <stdio.h>\nint main(){\n int n, a[100], i, max;\n scanf("%d", &n);\n for(i=0; i<=n; i++) scanf("%d", &a[i]);\n max = 0;\n for(i=1; i<n; i++) if(a[i] < max) max = a[i];\n printf("%d\\n", max);\n return 0;\n}`,
     [
       ["5\n3 9 2 7 4", "9"],
       ["3\n-2 -5 -1", "-1"],
     ],
     [["4\n-10 -2 -8 -1", "-1"]],
     [
-      "Loop reads one extra item",
-      "Bad initial maximum",
-      "Comparison is reversed",
-      "Missing semicolon",
-      "Fails all-negative arrays",
-      "Loop boundary/initialization bug",
+      "Loop reads past array bounds (i <= n)",
+      "Initial max value set to 0 fails all-negative input",
+      "Comparison operator reversed (< instead of >)",
+      "Array indexing off-by-one",
+      "Missing initial maximum from first element",
+      "Loop bounds initialization bug",
     ],
   ),
   C(
     "C4",
-    "Find Target and Return Index from Array",
-    "Print the first zero-based index of target, or -1.",
+    "Find Target Index",
+    "Read n, n integers, and a target integer. Print the zero-based index of target, or -1 if not found.",
     "n, n integers, target",
-    `#include <stdio.h>\nint main(){\n int n,a[100],target,i,idx=0; scanf("%d",&n);\n for(i=0;i<n;i++) scanf("%d",&a[i]); scanf("%d",&target);\n for(i=0;i<n;i++){ if(a[i]=target){ idx=i; break; } }\n printf("%d",idx);\n}`,
+    `#include <stdio.h>\nint main(){\n int n, a[100], target, i, idx = 0;\n scanf("%d", &n);\n for(i=0; i<n; i++) scanf("%d", &a[i]);\n scanf("%d", &target);\n for(i=0; i<n; i++){\n   if(a[i] = target){\n     idx = i;\n     break;\n   }\n }\n printf("%d\\n", idx);\n return 0;\n}`,
     [
       ["5\n2 4 7 4 9\n4", "1"],
       ["3\n1 2 3\n8", "-1"],
     ],
     [["4\n5 6 5 7\n5", "0"]],
     [
-      "Assignment instead of comparison",
-      "Default index should be -1",
-      "Does not distinguish not-found",
-      "Target check is unsafe",
-      "Output formatting issue",
-      "Incorrect not-found handling",
+      "Default index initialized to 0 instead of -1",
+      "Assignment operator = in if condition instead of ==",
+      "Target not-found check breaks logic",
+      "Loop break on assignment instead of match",
+      "Incorrect return code format",
+      "Array bounds safety defect",
     ],
   ),
   C(
     "C5",
-    "Pointer Function",
-    "Use a pointer function to double an integer in place.",
+    "Double Value Using Pointer",
+    "Complete a pointer function to double an integer in place.",
     "One integer",
-    `#include <stdio.h>\nvoid doubleValue(int *p){ *p = *p / 2; }\nint main(){ int n; scanf("%d",&n); doubleValue(n); printf("%d\\n",n); return 0; }`,
+    `#include <stdio.h>\nvoid doubleValue(int *p){\n *p = *p / 2;\n}\nint main(){\n int n;\n scanf("%d", &n);\n doubleValue(n);\n printf("%d\\n", n);\n return 0;\n}`,
     [
       ["7", "14"],
       ["20", "40"],
@@ -128,131 +130,19 @@ export const QUESTIONS = [
       ["-6", "-12"],
     ],
     [
-      "Passes value instead of address",
-      "Pointer operation divides",
-      "Function call type mismatch",
-      "Incorrect pointer update",
-      "Negative values fail",
-      "Pointer semantics broken",
-    ],
-  ),
-  C(
-    "C6",
-    "Palindrome",
-    "Check whether an integer is a palindrome.",
-    "One integer",
-    `#include <stdio.h>\nint main(){ int n,original,rev=0; scanf("%d",&n); original=n; while(n>0){ rev=rev*10+n%10; n=n/10; } if(rev=original) printf("Palindrome\\n"); else printf("Not Palindrome\\n"); return 0; }`,
-    [
-      ["121", "Palindrome"],
-      ["123", "Not Palindrome"],
-    ],
-    [
-      ["0", "Palindrome"],
-      ["1221", "Palindrome"],
-    ],
-    [
-      "Assignment in comparison",
-      "Zero is mishandled",
-      "Reverse loop boundary issue",
-      "Original handling is fragile",
-      "Comparison operator bug",
-      "Edge-case logic",
-    ],
-  ),
-  C(
-    "C7",
-    "Armstrong Number",
-    "For a 3-digit number, print Armstrong if sum of cubes of digits equals the number.",
-    "One integer",
-    `#include <stdio.h>\nint main(){ int n,temp,sum=0,d; scanf("%d",&n); temp=n; while(temp>0){ d=temp%10; sum += d*d; temp/=10; } if(sum==n) printf("Armstrong\\n"); else printf("Not Armstrong\\n"); return 0; }`,
-    [
-      ["153", "Armstrong"],
-      ["123", "Not Armstrong"],
-    ],
-    [
-      ["370", "Armstrong"],
-      ["100", "Not Armstrong"],
-    ],
-    [
-      "Uses square instead of cube",
-      "Wrong power calculation",
-      "Digit loop issue",
-      "Zero handling issue",
-      "3-digit rule not enforced",
-      "Arithmetic logic bug",
-    ],
-  ),
-  C(
-    "C8",
-    "Fibonacci",
-    "Print the first n Fibonacci numbers starting with 0 1.",
-    "One integer n",
-    `#include <stdio.h>\nint main(){ int n,a=0,b=1,c,i; scanf("%d",&n); for(i=0;i<n;i++){ printf("%d ",b); c=a+b; a=b; b=c; } return 0; }`,
-    [
-      ["1", "0"],
-      ["5", "0 1 1 2 3"],
-    ],
-    [
-      ["2", "0 1"],
-      ["7", "0 1 1 2 3 5 8"],
-    ],
-    [
-      "Prints b before update",
-      "Wrong initial first value",
-      "Sequence starts at 1",
-      "Spacing/format mismatch",
-      "Loop count issue",
-      "Initialization/sequence bug",
-    ],
-  ),
-  C(
-    "C9",
-    "Structure",
-    "Use a structure to store id and salary and print annual salary.",
-    "employeeId salary",
-    `#include <stdio.h>\nstruct Employee{ int id; float salary; };\nint main(){ struct Employee e; scanf("%d %f",&e.id,&e.salary); printf("%d %.2f\\n",e.id,e.salary*10); return 0; }`,
-    [
-      ["101 25000", "101 300000.00"],
-      ["7 1000", "7 12000.00"],
-    ],
-    [["55 5000", "55 60000.00"]],
-    [
-      "Wrong annual multiplier",
-      "Structure field type issue",
-      "Input mismatch risk",
-      "Incorrect output calculation",
-      "Formatting issue",
-      "Structure logic error",
-    ],
-  ),
-  C(
-    "C10",
-    "Pointers",
-    "Swap two integers using pointers.",
-    "Two integers",
-    `#include <stdio.h>\nvoid swap(int *a,int *b){ int t=*a; *a=*b; *b=t; }\nint main(){ int a,b; scanf("%d %d",a,&b); swap(&a,&b); printf("%d %d\\n",a,b); return 0; }`,
-    [
-      ["4 9", "9 4"],
-      ["-2 8", "8 -2"],
-    ],
-    [
-      ["0 0", "0 0"],
-      ["10 -5", "-5 10"],
-    ],
-    [
-      "Missing & in scanf",
-      "Pointer swap issue",
-      "Wrong temporary variable risk",
-      "Incorrect argument handling",
-      "Input address bug",
-      "Pointer safety bug",
+      "Function divides value by 2 instead of multiplying by 2",
+      "Passes integer value n to function instead of pointer &n",
+      "Pointer dereference arithmetic error",
+      "Incorrect pass-by-reference semantics",
+      "Negative multiplier handling bug",
+      "Type mismatch in function parameter pass",
     ],
   ),
   P(
     "P1",
-    "User Input Logic",
-    "Read two integers and print their sum.",
-    "Two integers",
+    "Sum of Two Integers",
+    "Read two integers from input and print their sum.",
+    "Two lines of integers",
     `a = input()\nb = input()\nprint(a + b)`,
     [
       ["4\n5", "9"],
@@ -262,9 +152,9 @@ export const QUESTIONS = [
   ),
   P(
     "P2",
-    "Conditional Logic",
+    "Pass or Fail Status",
     "Print Pass when mark is at least 40, otherwise Fail.",
-    "One integer",
+    "One integer mark",
     `mark = int(input())\nif mark > 40:\n    print("Pass")\nelse:\n    print("Fail")`,
     [
       ["40", "Pass"],
@@ -274,9 +164,9 @@ export const QUESTIONS = [
   ),
   P(
     "P3",
-    "For Loop With Array/List",
+    "Sum of List Elements",
     "Read n and n integers, then print their sum.",
-    "n followed by list",
+    "n then space-separated integers",
     `n = int(input())\nnums = list(map(int, input().split()))\ntotal = 0\nfor i in range(1, n):\n    total += nums[i]\nprint(total)`,
     [
       ["4\n1 2 3 4", "10"],
@@ -286,8 +176,8 @@ export const QUESTIONS = [
   ),
   P(
     "P4",
-    "Error in List",
-    "Read a list and a target; print the first index of target or -1.",
+    "Find Index in List",
+    "Read n, a list of n integers, and a target. Print first index of target, or -1 if not found.",
     "n, list, target",
     `n = int(input())\nnums = list(map(int, input().split()))\ntarget = int(input())\nprint(nums.index(target))`,
     [
@@ -298,7 +188,7 @@ export const QUESTIONS = [
   ),
   P(
     "P5",
-    "Loop With Dictionary",
+    "Passed Students Count",
     "Read n student scores and print how many are 50 or above.",
     "n lines: name score",
     `n = int(input())\nscores = {}\nfor _ in range(n):\n    name, score = input().split()\n    scores[name] = int(score)\ncount = 0\nfor name, score in scores.items():\n    if score > 50:\n        count += 1\nprint(count)`,
@@ -308,91 +198,12 @@ export const QUESTIONS = [
     ],
     [["4\nA 100\nB 50\nC 0\nD 75", "3"]],
   ),
-  P(
-    "P6",
-    "Set Operations",
-    "Read two sets and print their sorted union and intersection.",
-    "Two space-separated lines",
-    `a = set(map(int, input().split()))\nb = set(map(int, input().split()))\nprint(*sorted(a | b))\nprint(*sorted(a - b))`,
-    [
-      ["1 2 3\n2 3 4", "1 2 3 4\n2 3"],
-      ["1 5\n2 5", "1 2 5\n5"],
-    ],
-    [["-1 0 1\n0 2", "-1 0 1 2\n0"]],
-  ),
-  P(
-    "P7",
-    "Sorting",
-    "Read n integers and print them in ascending order.",
-    "n then list",
-    `n = int(input())\nnums = list(map(int, input().split()))\nnums.sort(reverse=True)\nprint(*nums)`,
-    [
-      ["5\n4 1 9 2 3", "1 2 3 4 9"],
-      ["3\n-1 -5 0", "-5 -1 0"],
-    ],
-    [["4\n10 10 2 1", "1 2 10 10"]],
-  ),
-  P(
-    "P8",
-    "Prime Number",
-    "Print Prime if n is prime, otherwise Not Prime.",
-    "One integer",
-    `n = int(input())\nif n < 2:\n    print("Prime")\nelse:\n    prime = True\n    for i in range(2, int(n ** 0.5) + 1):\n        if n % i == 0:\n            prime = False\n    print("Prime" if prime else "Not Prime")`,
-    [
-      ["2", "Prime"],
-      ["9", "Not Prime"],
-    ],
-    [
-      ["1", "Not Prime"],
-      ["97", "Prime"],
-    ],
-  ),
-  P(
-    "P9",
-    "Palindrome",
-    "Read a string and print Palindrome or Not Palindrome.",
-    "One string",
-    `s = input().strip()\nif s == s[::-1]:\n    print("Not Palindrome")\nelse:\n    print("Palindrome")`,
-    [
-      ["level", "Palindrome"],
-      ["hello", "Not Palindrome"],
-    ],
-    [
-      ["1221", "Palindrome"],
-      ["python", "Not Palindrome"],
-    ],
-  ),
-  P(
-    "P10",
-    "args and kwargs",
-    "Read numbers and a bonus. Use *args for numbers and **kwargs for bonus, then print total.",
-    "Line 1 numbers, line 2 bonus",
-    `def calculate(*args, **kwargs):\n    total = sum(args)\n    total -= kwargs.get("bonus", 0)\n    return total\nnums = list(map(int, input().split()))\nbonus = int(input())\nprint(calculate(*nums, bonus=bonus))`,
-    [
-      ["1 2 3\n5", "11"],
-      ["10 20\n7", "37"],
-    ],
-    [["0 5\n10", "15"]],
-  ),
-];
-// Replace intentionally illustrative bug lists for questions where the executable starter code is not itself six-way broken.
-for (const x of QUESTIONS)
-  if (x.language === "Python")
-    x.bugs = [
-      "Starter contains a deliberate syntax/logic defect",
-      "Input handling defect",
-      "Boundary/condition defect",
-      "Operation defect",
-      "Output defect",
-      "Edge-case defect",
-    ];
-QUESTIONS.push(
   J(
     "J1",
     "Prime Number Logic",
     "Print Prime or Not Prime for an integer.",
     "One integer",
-    `import java.util.*;\npublic class Main { public static void main(String[] args){ Scanner sc=new Scanner(System.in); int n=sc.nextInt(); boolean prime=true; if(n<2) prime=true; for(int i=2;i*i<=n;i++){ if(n%i==0){ prime=false; break; } } System.out.println(prime?"Prime":"Not Prime"); } }`,
+    `import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        boolean prime = true;\n        if (n < 2) prime = true;\n        for (int i = 2; i * i <= n; i++) {\n            if (n % i == 0) {\n                prime = false;\n                break;\n            }\n        }\n        System.out.println(prime ? "Prime" : "Not Prime");\n    }\n}`,
     [
       ["2", "Prime"],
       ["9", "Not Prime"],
@@ -405,9 +216,9 @@ QUESTIONS.push(
   J(
     "J2",
     "Electricity Billing System",
-    "Units <=100 at 1.5, 101-200 at 2.5, above 200 at 4.0. Print bill to 2 decimals.",
+    "Units <= 100 at 1.5, 101-200 at 2.5, above 200 at 4.0. Print bill formatted to 2 decimals.",
     "One integer units",
-    `import java.util.*;\npublic class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);int u=s.nextInt();double b;if(u<=100)b=u*1.5;else if(u<=200)b=100*1.5+(u-100)*2.5;else b=100*1.5+100*2.5+(u-200)*4;System.out.printf("%.2f\\n",b);}}`,
+    `import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner s = new Scanner(System.in);\n        int u = s.nextInt();\n        double b;\n        if (u <= 100) b = u * 1.5;\n        else if (u <= 200) b = (u - 100) * 2.5;\n        else b = 100 * 1.5 + 100 * 2.5 + (u - 200) * 4;\n        System.out.printf("%.2f\\n", b);\n    }\n}`,
     [
       ["100", "150.00"],
       ["150", "275.00"],
@@ -417,38 +228,15 @@ QUESTIONS.push(
   J(
     "J3",
     "Bank Management System",
-    "Read balance, deposit and withdrawal. If withdrawal exceeds balance print Insufficient else print final balance.",
+    "Read balance, deposit, and withdrawal. If withdrawal exceeds updated balance print Insufficient else print final balance to 2 decimals.",
     "Three numbers: balance deposit withdrawal",
-    `import java.util.*;\npublic class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);double bal=s.nextDouble(),dep=s.nextDouble(),wd=s.nextDouble();bal=bal+dep;if(wd>bal)System.out.println("Insufficient");else System.out.printf("%.2f\\n",bal-wd);}}`,
+    `import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner s = new Scanner(System.in);\n        double bal = s.nextDouble();\n        double dep = s.nextDouble();\n        double wd = s.nextDouble();\n        if (wd > bal) {\n            System.out.println("Insufficient");\n        } else {\n            bal = bal + dep;\n            System.out.printf("%.2f\\n", bal - wd);\n        }\n    }\n}`,
     [
       ["1000 500 200", "1300.00"],
       ["500 0 600", "Insufficient"],
     ],
     [["100 100 50", "150.00"]],
   ),
-  J(
-    "J4",
-    "Attendance System",
-    "Print Eligible when attendance percentage is at least 75, otherwise Not Eligible.",
-    "totalClasses attendedClasses",
-    `import java.util.*;\npublic class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);int total=s.nextInt(),att=s.nextInt();double p=(att*100.0)/total;System.out.printf("%.2f%% %s\\n",p,p>75?"Eligible":"Not Eligible");}}`,
-    [
-      ["100 75", "75.00% Eligible"],
-      ["100 74", "74.00% Not Eligible"],
-    ],
-    [["40 30", "75.00% Eligible"]],
-  ),
-  J(
-    "J5",
-    "Employee Salary System",
-    "Gross salary = basic + HRA% of basic + DA% of basic. Print to 2 decimals.",
-    "basic hraPercent daPercent",
-    `import java.util.*;\npublic class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);double basic=s.nextDouble(),hra=s.nextDouble(),da=s.nextDouble();double gross=basic+(basic*hra/100)+(basic*da/100);System.out.printf("%.2f\\n",gross);}}`,
-    [
-      ["10000 10 5", "11500.00"],
-      ["20000 20 10", "26000.00"],
-    ],
-    [["5000 5 5", "5500.00"]],
-  ),
-);
+];
+
 export const QUESTION_MAP = new Map(QUESTIONS.map((x) => [x.id, x]));

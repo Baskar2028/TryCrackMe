@@ -218,6 +218,13 @@ for (const [i, q] of QUESTIONS.entries()) {
   );
 }
 
+const activeIds = QUESTIONS.map((q) => q.id);
+if (activeIds.length > 0) {
+  db.prepare(
+    `DELETE FROM questions WHERE id NOT IN (${activeIds.map(() => "?").join(",")})`
+  ).run(...activeIds);
+}
+
 /*
 |--------------------------------------------------------------------------
 | ADMIN SEED
@@ -841,7 +848,7 @@ async function runProcess(
           ok: false,
           error: error.message,
           stdout,
-          stderr,
+          stderr: stderr ? `${stderr}\n${error.message}` : error.message,
           timeout: false,
         });
       }
@@ -933,7 +940,7 @@ async function execute(
       const executable =
         path.join(
           directory,
-          "main"
+          process.platform === "win32" ? "main.exe" : "main"
         );
 
       fs.writeFileSync(
@@ -1016,11 +1023,12 @@ async function execute(
       );
 
       const results = [];
+      const pyCmd = process.platform === "win32" ? "python" : "python3";
 
       for (const test of tests) {
         const result =
           await runProcess(
-            "python3",
+            pyCmd,
             [source],
             test[0],
             2500,
