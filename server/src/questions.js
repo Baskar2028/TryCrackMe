@@ -143,7 +143,7 @@ export const QUESTIONS = [
     "Sum of Two Integers",
     "Read two integers from input and print their sum.",
     "Two lines of integers",
-    `a = input()\nb = input()\nprint(a + b)`,
+    `a = input()\nb = input()\nprint(a + c)`,
     [
       ["4\n5", "9"],
       ["10\n-2", "8"],
@@ -155,7 +155,7 @@ export const QUESTIONS = [
     "Pass or Fail Status",
     "Print Pass when mark is at least 40, otherwise Fail.",
     "One integer mark",
-    `mark = int(input())\nif mark > 40:\n    print("Pass")\nelse:\n    print("Fail")`,
+    `mark = input()\nif mark > 40:\n    print("Pass")\nelse:\n    print("Fail")`,
     [
       ["40", "Pass"],
       ["39", "Fail"],
@@ -167,7 +167,7 @@ export const QUESTIONS = [
     "Sum of List Elements",
     "Read n and n integers, then print their sum.",
     "n then space-separated integers",
-    `n = int(input())\nnums = list(map(int, input().split()))\ntotal = 0\nfor i in range(1, n):\n    total += nums[i]\nprint(total)`,
+    `n = int(input())\nnums = input().split()\ntotal = 0\nfor i in range(1, n):\n    total += nums[i]\nprint(total)`,
     [
       ["4\n1 2 3 4", "10"],
       ["3\n5 5 5", "15"],
@@ -179,7 +179,7 @@ export const QUESTIONS = [
     "Find Index in List",
     "Read n, a list of n integers, and a target. Print first index of target, or -1 if not found.",
     "n, list, target",
-    `n = int(input())\nnums = list(map(int, input().split()))\ntarget = int(input())\nprint(nums.index(target))`,
+    `n = int(input())\nnums = list(map(int, input().split()))\ntarget = int(input())\nprint(nums.index(target) + 1)`,
     [
       ["4\n5 8 3 8\n8", "1"],
       ["3\n1 2 3\n9", "-1"],
@@ -191,7 +191,7 @@ export const QUESTIONS = [
     "Passed Students Count",
     "Read n student scores and print how many are 50 or above.",
     "n lines: name score",
-    `n = int(input())\nscores = {}\nfor _ in range(n):\n    name, score = input().split()\n    scores[name] = int(score)\ncount = 0\nfor name, score in scores.items():\n    if score > 50:\n        count += 1\nprint(count)`,
+    `n = int(input())\nscores = {}\nfor _ in range(n):\n    name, score = input().split()\n    scores[name] = score\ncount = 0\nfor name, score in scores.items():\n    if score > 50:\n        count += 1\nprint(count)`,
     [
       ["3\nA 60\nB 50\nC 40", "2"],
       ["2\nX 49\nY 51", "1"],
@@ -230,7 +230,7 @@ export const QUESTIONS = [
     "Bank Management System",
     "Read balance, deposit, and withdrawal. If withdrawal exceeds updated balance print Insufficient else print final balance to 2 decimals.",
     "Three numbers: balance deposit withdrawal",
-    `import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner s = new Scanner(System.in);\n        double bal = s.nextDouble();\n        double dep = s.nextDouble();\n        double wd = s.nextDouble();\n        if (wd > bal) {\n            System.out.println("Insufficient");\n        } else {\n            bal = bal + dep;\n            System.out.printf("%.2f\\n", bal - wd);\n        }\n    }\n}`,
+    `import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner s = new Scanner(System.in);\n        double bal = s.nextDouble();\n        double dep = s.nextDouble();\n        double wd = s.nextDouble();\n        if (wd > bal) {\n            System.out.println("Insufficient");\n        } else {\n            bal = bal - dep;\n            System.out.printf("%.2f\\n", bal - wd);\n        }\n    }\n}`,
     [
       ["1000 500 200", "1300.00"],
       ["500 0 600", "Insufficient"],

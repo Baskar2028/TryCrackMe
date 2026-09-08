@@ -26,8 +26,10 @@ import {
   Trash2,
   XCircle,
   HelpCircle,
+  GraduationCap,
 } from "lucide-react";
 import "./styles.css";
+
 const api = async (path, opts = {}) => {
   const r = await fetch("/api" + path, {
     credentials: "include",
@@ -41,27 +43,32 @@ const api = async (path, opts = {}) => {
   if (!r.ok) throw new Error(d.error || "Request failed");
   return d;
 };
+
 const fmt = (s) => {
   s = Math.max(0, Math.floor(s || 0));
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 };
+
 function App() {
   const [me, setMe] = useState(null),
     [loading, setLoading] = useState(true);
+
   useEffect(
     () =>
       api("/auth/me")
         .then((d) => setMe(d))
         .catch(() => setMe(null))
         .finally(() => setLoading(false)),
-    [],
+    []
   );
+
   if (loading)
     return (
       <div className="center">
         <Spinner />
       </div>
     );
+
   return me ? (
     <>
       {me.user.role === "admin" ? <Admin me={me} /> : <Participant me={me} />}
@@ -70,15 +77,22 @@ function App() {
     <Login onLogin={setMe} />
   );
 }
+
 function Spinner() {
   return <div className="spinner" />;
 }
+
 function Login({ onLogin }) {
-  const [tab, setTab] = useState("participant"),
-    [id, setId] = useState("TC001"),
-    [password, setPassword] = useState("participant@123"),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+  const [tab, setTab] = useState("participant");
+  const [participantId, setParticipantId] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [college, setCollege] = useState("");
+  const [adminUser, setAdminUser] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -90,10 +104,10 @@ function Login({ onLogin }) {
           method: "POST",
           body: JSON.stringify(
             tab === "participant"
-              ? { participantId: id, password }
-              : { username: id, password },
+              ? { participantId, password, name, college }
+              : { username: adminUser, password: adminPassword }
           ),
-        },
+        }
       );
       onLogin(d);
     } catch (e) {
@@ -102,6 +116,7 @@ function Login({ onLogin }) {
       setBusy(false);
     }
   };
+
   return (
     <div className="login-shell">
       <div className="login-card glass">
@@ -114,38 +129,78 @@ function Login({ onLogin }) {
         <div className="tabs">
           <button
             className={tab === "participant" ? "active" : ""}
-            onClick={() => {
-              setTab("participant");
-              setId("TC001");
-              setPassword("participant@123");
-            }}
+            onClick={() => setTab("participant")}
           >
-            Participant
+            Participant Entry
           </button>
           <button
             className={tab === "admin" ? "active" : ""}
-            onClick={() => {
-              setTab("admin");
-              setId("admin");
-              setPassword("TryCrackMe@2026");
-            }}
+            onClick={() => setTab("admin")}
           >
-            Admin
+            Admin Login
           </button>
         </div>
         <form onSubmit={submit}>
-          <label>{tab === "participant" ? "Participant ID" : "Username"}</label>
-          <input value={id} onChange={(e) => setId(e.target.value)} required />
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          {tab === "participant" ? (
+            <>
+              <label>Participant ID</label>
+              <input
+                value={participantId}
+                placeholder="e.g. TC001"
+                onChange={(e) => setParticipantId(e.target.value)}
+                autoComplete="off"
+                required
+              />
+              <label>Password</label>
+              <input
+                type="password"
+                value={password}
+                placeholder="Enter your participant password"
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="off"
+                required
+              />
+              <label>Participant Name</label>
+              <input
+                value={name}
+                placeholder="Enter your full name"
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <label>College of Participant</label>
+              <input
+                value={college}
+                placeholder="Enter your college / institution"
+                onChange={(e) => setCollege(e.target.value)}
+                required
+              />
+            </>
+          ) : (
+            <>
+              <label>Admin Username</label>
+              <input
+                value={adminUser}
+                placeholder="Enter admin username"
+                onChange={(e) => setAdminUser(e.target.value)}
+                autoComplete="off"
+                required
+              />
+              <label>Admin Password</label>
+              <input
+                type="password"
+                value={adminPassword}
+                placeholder="Enter admin password"
+                onChange={(e) => setAdminPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+              />
+            </>
+          )}
+
           <button className="primary wide" disabled={busy}>
-            {busy ? <Spinner /> : "ENTER CONSOLE"}
+            {busy ? <Spinner /> : tab === "participant" ? "ENTER COMPETITION" : "ENTER CONSOLE"}
           </button>
+
           {error && (
             <div className="error-box">
               <AlertTriangle size={16} />
@@ -154,12 +209,13 @@ function Login({ onLogin }) {
           )}
         </form>
         <div className="login-note">
-          Server-authoritative timer • 13 challenges • 10-warning limit
+          Use your issued Participant ID & Password • Controlled by Admin Start
         </div>
       </div>
     </div>
   );
 }
+
 function EventBar({ event, admin = false, onAction }) {
   return (
     <div className="eventbar">
@@ -206,13 +262,7 @@ function EventBar({ event, admin = false, onAction }) {
     </div>
   );
 }
-function useEventSocket(setEvent) {
-  useEffect(() => {
-    const s = io({ withCredentials: true });
-    s.on("event:update", setEvent);
-    return () => s.disconnect();
-  }, [setEvent]);
-}
+
 function Participant({ me }) {
   const [event, setEvent] = useState(me.event),
     [session, setSession] = useState(me.session),
@@ -222,6 +272,7 @@ function Participant({ me }) {
     [code, setCode] = useState(""),
     [term, setTerm] = useState(null),
     [message, setMessage] = useState("");
+
   useEffect(() => {
     let mounted = true;
     const syncSession = async () => {
@@ -236,10 +287,13 @@ function Participant({ me }) {
         if (mounted) setMessage(e.message);
       }
     };
+
     api("/questions")
       .then((d) => mounted && setQuestions(d.questions))
       .catch((e) => mounted && setMessage(e.message));
+
     syncSession();
+
     const s = io({ withCredentials: true });
     const onEvent = (nextEvent) => {
       setEvent(nextEvent);
@@ -247,23 +301,28 @@ function Participant({ me }) {
     };
     const onTerminated = () => {
       setSession((current) =>
-        current ? { ...current, status: "TERMINATED" } : current,
+        current ? { ...current, status: "TERMINATED" } : current
       );
     };
+
     s.on("event:update", onEvent);
     s.on("session:terminated", onTerminated);
+
     return () => {
       mounted = false;
       s.disconnect();
     };
   }, []);
+
   useEffect(() => {
     const p = progress.find((x) => x.question_id === selected);
     const q = questions.find((x) => x.id === selected);
     setCode(p?.code ?? q?.starterCode ?? "");
     setTerm(null);
   }, [selected, questions]);
+
   const q = questions.find((x) => x.id === selected);
+
   const enter = async () => {
     try {
       await document.documentElement.requestFullscreen();
@@ -274,21 +333,33 @@ function Participant({ me }) {
       setMessage(e.message);
     }
   };
+
   if (!session)
     return (
       <Waiting
+        me={me}
         event={event}
         onEnter={event.status === "RUNNING" ? enter : null}
         message={message}
       />
     );
+
   if (session.status === "TERMINATED")
     return <Result event={event} session={session} terminated />;
+
   if (event.status === "ENDED" || session.status === "COMPLETED")
     return <Result event={event} session={session} />;
-  if (!q) return <div className="center"><Spinner /></div>;
+
+  if (!q)
+    return (
+      <div className="center">
+        <Spinner />
+      </div>
+    );
+
   return (
     <Competition
+      me={me}
       event={event}
       setEvent={setEvent}
       session={session}
@@ -308,7 +379,8 @@ function Participant({ me }) {
     />
   );
 }
-function Waiting({ event, onEnter, message }) {
+
+function Waiting({ me, event, onEnter, message }) {
   return (
     <div className="center-shell">
       <div className="wait-card glass">
@@ -322,11 +394,14 @@ function Waiting({ event, onEnter, message }) {
               : "EVENT HAS NOT STARTED YET"}
         </h2>
         <p>
+          Welcome, <b>{me.user.name}</b> ({me.user.college})
+        </p>
+        <p>
           {event.status === "RUNNING"
-            ? "Enter fullscreen to unlock the coding console."
+            ? "The competition is live! Enter fullscreen to unlock the console."
             : event.status === "ENDED"
               ? "The administrator has finalized the competition."
-              : "Stay ready. The administrator will enable the 30-minute competition timer."}
+              : "The timer will strictly start once the administrator clicks START. Please keep this screen open."}
         </p>
         {onEnter && (
           <button className="primary" onClick={onEnter}>
@@ -338,14 +413,22 @@ function Waiting({ event, onEnter, message }) {
     </div>
   );
 }
+
 function useAntiCheat(active, setMessage) {
   useEffect(() => {
     if (!active) return;
     let last = {};
+    let lastAny = 0;
     const report = async (type, reason) => {
       const t = Date.now();
+      // Per-type debounce (ignore rapid repeats of the same violation)
       if (t - (last[type] || 0) < 1200) return;
+      // Cross-type debounce (a single action, e.g. a tab switch, can fire
+      // both a "blur" and a "visibilitychange" event at once — only count
+      // it once so the warning counter always increases exactly 1 by 1)
+      if (t - lastAny < 800) return;
       last[type] = t;
+      lastAny = t;
       try {
         const d = await api("/participant/activity", {
           method: "POST",
@@ -354,6 +437,7 @@ function useAntiCheat(active, setMessage) {
         setMessage(`${reason} • warning ${d.count}/10`);
       } catch {}
     };
+
     const vis = () => {
       if (document.hidden)
         report("TAB_SWITCH", "TAB SWITCH / VISIBILITY CHANGE DETECTED");
@@ -371,7 +455,7 @@ function useAntiCheat(active, setMessage) {
       if ((e.ctrlKey || e.metaKey) && ["c", "v", "x"].includes(k)) {
         report(
           k === "c" ? "COPY" : k === "v" ? "PASTE" : "CUT",
-          "CLIPBOARD ACTION DETECTED",
+          "CLIPBOARD ACTION DETECTED"
         );
       }
       if (
@@ -390,11 +474,13 @@ function useAntiCheat(active, setMessage) {
       if (!document.fullscreenElement)
         report("FULLSCREEN_EXIT", "FULLSCREEN EXIT DETECTED");
     };
+
     document.addEventListener("visibilitychange", vis);
     window.addEventListener("blur", blur);
     document.addEventListener("keydown", key, true);
     document.addEventListener("contextmenu", ctx);
     document.addEventListener("fullscreenchange", fs);
+
     return () => {
       document.removeEventListener("visibilitychange", vis);
       window.removeEventListener("blur", blur);
@@ -404,7 +490,9 @@ function useAntiCheat(active, setMessage) {
     };
   }, [active, setMessage]);
 }
+
 function Competition({
+  me,
   event,
   setEvent,
   session,
@@ -422,44 +510,51 @@ function Competition({
   message,
   setMessage,
 }) {
-  const [remaining, setRemaining] = useState(event.remainingSeconds),
-    [busy, setBusy] = useState(false),
-    [confirm, setConfirm] = useState(null);
+  const [remaining, setRemaining] = useState(event.remainingSeconds);
+  const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(null);
+
   useAntiCheat(true, setMessage);
+
   useEffect(() => {
     const i = setInterval(() => {
       setRemaining(
         event.remainingSeconds -
-          Math.floor((Date.now() - event.serverNow) / 1000),
+          Math.floor((Date.now() - event.serverNow) / 1000)
       );
     }, 500);
     return () => clearInterval(i);
   }, [event]);
+
   useEffect(() => {
     const i = setInterval(
       () =>
         api("/event")
           .then(setEvent)
           .catch(() => {}),
-      3000,
+      3000
     );
     return () => clearInterval(i);
   }, [setEvent]);
+
   useEffect(() => {
     if (remaining <= 0 || event.status !== "RUNNING") {
       if (remaining <= 0) setMessage("TIME UP — submissions are locked.");
       return;
     }
   }, [remaining, event.status, setMessage]);
+
   const groups = useMemo(
     () =>
       ["C", "Python", "Java"].map((lang) => ({
         lang,
         items: questions.filter((x) => x.language === lang),
       })),
-    [questions],
+    [questions]
   );
+
   const idx = questions.findIndex((x) => x.id === selected);
+
   const save = async (nextCode = code) => {
     try {
       await api("/participant/progress/" + q.id, {
@@ -483,6 +578,7 @@ function Competition({
       setMessage(e.message);
     }
   };
+
   const run = async () => {
     setBusy(true);
     try {
@@ -498,6 +594,7 @@ function Competition({
       setBusy(false);
     }
   };
+
   const submit = async () => {
     setConfirm(null);
     setBusy(true);
@@ -520,34 +617,41 @@ function Competition({
           },
         ]);
         setMessage(
-          `SOLVED • +${d.scoreAwarded}${d.bonusAwarded ? ` +${d.bonusAwarded} hidden bonus` : ""}`,
+          `SOLVED • +${d.scoreAwarded}${d.bonusAwarded ? ` +${d.bonusAwarded} hidden bonus` : ""}`
         );
-      } else
+      } else {
         setMessage("Not solved yet — fix the failing behavior and resubmit.");
+      }
     } catch (e) {
       setMessage(e.message);
     } finally {
       setBusy(false);
     }
   };
+
   const next = () => {
     if (idx < questions.length - 1) {
       save(code);
       setSelected(questions[idx + 1].id);
     }
   };
+
   const prev = () => {
     if (idx > 0) {
       save(code);
       setSelected(questions[idx - 1].id);
     }
   };
+
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="brand">
           <Code2 size={22} />
           <span>TRY CRACK ME</span>
+          <small style={{ marginLeft: "12px", opacity: 0.75 }}>
+            {me.user.name} ({me.user.college})
+          </small>
         </div>
         <div className="topstats">
           <div>
@@ -563,7 +667,7 @@ function Competition({
             <b>
               {progress.reduce(
                 (a, p) => a + (p.score || 0) + (p.bonus || 0),
-                0,
+                0
               )}
             </b>
           </div>
@@ -648,7 +752,9 @@ function Competition({
         <aside className="question-panel">
           <div className="panel-title">
             <span>CHALLENGES</span>
-            <span>{progress.filter((p) => p.solved).length}/{questions.length} solved</span>
+            <span>
+              {progress.filter((p) => p.solved).length}/{questions.length} solved
+            </span>
           </div>
           {groups.map((g) => (
             <div key={g.lang} className="qgroup">
@@ -714,6 +820,7 @@ function Competition({
     </div>
   );
 }
+
 function Terminal({ result, onClear, q }) {
   const [activeTab, setActiveTab] = useState("console");
   const [copied, setCopied] = useState(false);
@@ -899,6 +1006,7 @@ function Terminal({ result, onClear, q }) {
     </div>
   );
 }
+
 function OutputBlock({ label, value, error = false, placeholder = "No output" }) {
   return (
     <div className={`output-block ${error ? "error-output" : ""}`}>
@@ -907,9 +1015,11 @@ function OutputBlock({ label, value, error = false, placeholder = "No output" })
     </div>
   );
 }
+
 function Result({ event, session, terminated }) {
   const [data, setData] = useState(null);
   useEffect(() => api("/participant/result").then(setData), []);
+
   return (
     <div className="center-shell">
       <div className="result-card glass">
@@ -949,6 +1059,7 @@ function Result({ event, session, terminated }) {
     </div>
   );
 }
+
 function Admin({ me }) {
   const [event, setEvent] = useState(me.event),
     [board, setBoard] = useState([]),
@@ -958,6 +1069,7 @@ function Admin({ me }) {
     [tab, setTab] = useState("leaderboard"),
     [msg, setMsg] = useState(""),
     [remaining, setRemaining] = useState(me.event.remainingSeconds);
+
   const load = async () => {
     try {
       const [b, p] = await Promise.all([
@@ -971,6 +1083,7 @@ function Admin({ me }) {
       setMsg(e.message);
     }
   };
+
   useEffect(() => {
     load();
     const s = io({ withCredentials: true });
@@ -985,15 +1098,17 @@ function Admin({ me }) {
       s.disconnect();
     };
   }, []);
+
   useEffect(() => {
     const i = setInterval(() => {
       setRemaining(
         event.remainingSeconds -
-          Math.floor((Date.now() - event.serverNow) / 1000),
+          Math.floor((Date.now() - event.serverNow) / 1000)
       );
     }, 500);
     return () => clearInterval(i);
   }, [event]);
+
   const action = async (a) => {
     if (
       a === "reset" &&
@@ -1009,10 +1124,12 @@ function Admin({ me }) {
       setMsg(e.message);
     }
   };
+
   const open = async (pid) => {
     setSelected(pid);
     setDetail(await api("/admin/participants/" + pid));
   };
+
   return (
     <div className="admin-shell">
       <header className="topbar">
@@ -1079,7 +1196,7 @@ function Admin({ me }) {
                 <tr>
                   <th>Rank</th>
                   <th>Participant</th>
-                  <th>ID</th>
+                  <th>College</th>
                   <th>C</th>
                   <th>Python</th>
                   <th>Java</th>
@@ -1095,7 +1212,7 @@ function Admin({ me }) {
                   <tr key={r.participant_id}>
                     <td>#{r.rank}</td>
                     <td>{r.name}</td>
-                    <td>{r.participant_id}</td>
+                    <td>{r.college || "—"}</td>
                     <td>{r.c_score}</td>
                     <td>{r.python_score}</td>
                     <td>{r.java_score}</td>
@@ -1121,7 +1238,7 @@ function Admin({ me }) {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>ID</th>
+                  <th>College</th>
                   <th>Status</th>
                   <th>Current</th>
                   <th>Solved</th>
@@ -1134,7 +1251,7 @@ function Admin({ me }) {
                 {people.map((p) => (
                   <tr key={p.participant_id}>
                     <td>{p.name}</td>
-                    <td>{p.participant_id}</td>
+                    <td>{p.college || "—"}</td>
                     <td>{p.status || "NOT ENTERED"}</td>
                     <td>{p.current_question || "—"}</td>
                     <td>{p.solved}/13</td>
@@ -1163,7 +1280,7 @@ function Admin({ me }) {
                 <div className="eyebrow">PARTICIPANT MONITOR</div>
                 <h2>
                   {detail.participant.name}{" "}
-                  <span>{detail.participant.participant_id}</span>
+                  <span>({detail.participant.college})</span>
                 </h2>
               </div>
               <button onClick={() => setDetail(null)}>Close</button>
@@ -1187,7 +1304,7 @@ function Admin({ me }) {
                   {detail.submissions
                     .map(
                       (s) =>
-                        `${s.created_at}  ${s.question_id}  ${s.passed_public ? "PASS" : "FAIL"}  +${s.score_awarded}+${s.bonus_awarded}`,
+                        `${s.created_at}  ${s.question_id}  ${s.passed_public ? "PASS" : "FAIL"}  +${s.score_awarded}+${s.bonus_awarded}`
                     )
                     .join("\n") || "None"}
                 </pre>
@@ -1207,6 +1324,7 @@ function Admin({ me }) {
     </div>
   );
 }
+
 function Stat({ label, value, icon }) {
   return (
     <div className="stat glass">
@@ -1216,8 +1334,9 @@ function Stat({ label, value, icon }) {
     </div>
   );
 }
+
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <App />
-  </BrowserRouter>,
+  </BrowserRouter>
 );
